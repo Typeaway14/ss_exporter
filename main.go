@@ -98,10 +98,11 @@ func logRequest(r *http.Request) {
 }
 
 func parseSSOutput(protocol string) {
-	ssCommand := fmt.Sprintf("ss -op%s", protocol)
+	ssCommand := fmt.Sprintf("ss -op%s | sed 1d", protocol)
 	if protocol == "t" {
 		protocol = "tcp"
 	} else {
+		// log.Printf("GOT UDP SOCKET")
 		protocol = "udp"
 	}
 	if config.debug {
@@ -127,15 +128,36 @@ func parseSSOutput(protocol string) {
 
 		parts := strings.Fields(line)
 		length := len(parts)
-		if length <= 5 {
-			if config.debug {
-				log.Printf("no associated process found, skipping")
-			}
-			continue
-		}
-		rq, sq := parts[1], parts[2]
+		var users_field int
 		processName, pid, fd, retrans := "", "", "", ""
-		matches := config.regex.FindStringSubmatch(parts[5])
+		rq, sq := "", ""
+		if protocol == "udp" {
+			if length <= 4 {
+				if config.debug {
+					log.Printf("no associated process found, skipping")
+				}
+				continue
+			} else {
+				rq, sq = parts[0], parts[1]
+				users_field = 4
+			}
+		} else {
+			if length <= 5 {
+				if config.debug {
+					log.Printf("no associated process found, skipping")
+				}
+				continue
+			} else {
+				users_field = 5
+				rq, sq = parts[1], parts[2]
+				if length == 7 {
+					temp := strings.Split(parts[6], ",")[2]
+					retrans = temp[:len(temp)-1]
+				}
+			}
+		}
+		matches := config.regex.FindStringSubmatch(parts[users_field])
+		// log.Printf("matches: %s, protocol: %s", matches, protocol)
 		if config.debug {
 			log.Printf("printing matches : %s", matches)
 		}
@@ -149,14 +171,9 @@ func parseSSOutput(protocol string) {
 			}
 			continue
 		}
-		if length == 7 {
-			temp := strings.Split(parts[6], ",")[2]
-			retrans = temp[:len(temp)-1]
-		}
 		if config.debug {
 			log.Printf("Process Name: %s ; pid: %s ; fd: %s ; retrans: %s", processName, pid, fd, retrans)
 		}
-
 		recvQueue.WithLabelValues(processName, pid, fd, protocol).Set(stringToFloat(rq))
 		sentQueue.WithLabelValues(processName, pid, fd, protocol).Set(stringToFloat(sq))
 		if retrans != "" {
