@@ -129,8 +129,8 @@ func parseSSOutput(protocol string) {
 		parts := strings.Fields(line)
 		length := len(parts)
 		var users_field int
-		rq, sq := parts[1], parts[2]
 		processName, pid, fd, retrans := "", "", "", ""
+		rq, sq := "", ""
 		if protocol == "udp" {
 			if length <= 4 {
 				if config.debug {
@@ -138,6 +138,7 @@ func parseSSOutput(protocol string) {
 				}
 				continue
 			} else {
+				rq, sq = parts[0], parts[1]
 				users_field = 4
 			}
 		} else {
@@ -148,6 +149,7 @@ func parseSSOutput(protocol string) {
 				continue
 			} else {
 				users_field = 5
+				rq, sq = parts[1], parts[2]
 				if length == 7 {
 					temp := strings.Split(parts[6], ",")[2]
 					retrans = temp[:len(temp)-1]
