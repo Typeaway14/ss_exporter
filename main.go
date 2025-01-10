@@ -38,21 +38,21 @@ var (
 			Name: "sockstat_receive_queue_bytes",
 			Help: "Bytes waiting in the receive queue of the process",
 		},
-		[]string{"process_name", "pid", "fd", "protocol"},
+		[]string{"metric_name","process_name", "pid", "fd", "protocol"},
 	)
 	sentQueue = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "sockstat_sent_queue_bytes",
 			Help: "Bytes waiting in the sent queue of the process",
 		},
-		[]string{"process_name", "pid", "fd", "protocol"},
+		[]string{"metric_name","process_name", "pid", "fd", "protocol"},
 	)
 	retransmissionCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "sockstat_retransmissions_total",
 			Help: "Number of packets that have been retransmitted",
 		},
-		[]string{"process_name", "pid", "fd", "protocol"},
+		[]string{"metric_name","process_name", "pid", "fd", "protocol"},
 	)
 )
 
@@ -174,10 +174,10 @@ func parseSSOutput(protocol string) {
 		if config.debug {
 			log.Printf("Process Name: %s ; pid: %s ; fd: %s ; retrans: %s", processName, pid, fd, retrans)
 		}
-		recvQueue.WithLabelValues(processName, pid, fd, protocol).Set(stringToFloat(rq))
-		sentQueue.WithLabelValues(processName, pid, fd, protocol).Set(stringToFloat(sq))
+		recvQueue.WithLabelValues("sockstat_receive_queue_bytes",processName, pid, fd, protocol).Set(stringToFloat(rq))
+		sentQueue.WithLabelValues("sockstat_sent_queue_bytes",processName, pid, fd, protocol).Set(stringToFloat(sq))
 		if retrans != "" {
-			retransmissionCounter.WithLabelValues(processName, pid, fd, protocol).Set(stringToFloat(retrans))
+			retransmissionCounter.WithLabelValues("sockstat_retransmissions_total",processName, pid, fd, protocol).Set(stringToFloat(retrans))
 		}
 	}
 
@@ -236,10 +236,10 @@ func parseProcessSSOutput(protocol string, processName string) {
 		if config.debug {
 			log.Printf("Process Name: %s ; pid: %s ; fd: %s ; retrans: %s", processName, pid, fd, retrans)
 		}
-		recvQueue.WithLabelValues(processName, pid, fd, protocol).Set(stringToFloat(rq))
-		sentQueue.WithLabelValues(processName, pid, fd, protocol).Set(stringToFloat(sq))
+		recvQueue.WithLabelValues("sockstat_receive_queue_bytes",processName, pid, fd, protocol).Set(stringToFloat(rq))
+		sentQueue.WithLabelValues("sockstat_sent_queue_bytes",processName, pid, fd, protocol).Set(stringToFloat(sq))
 		if retrans != "" {
-			retransmissionCounter.WithLabelValues(processName, pid, fd, protocol).Set(stringToFloat(retrans))
+			retransmissionCounter.WithLabelValues("sockstat_retransmissions_total",processName, pid, fd, protocol).Set(stringToFloat(retrans))
 		}
 	}
 
